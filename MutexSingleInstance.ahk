@@ -24,6 +24,7 @@ class VersionManager_MutexSingleInstance
 class MutexSingleInstance
 {
     static _hMutex := 0
+        ,_NS := "{2A89458C-A9A1-402F-A3E6-BCB6848608EA}"
         ,_gui := ""
         ,_objbmOnMutexSingleInstanceTerminate := objBindMethod(this, "_onMutexSingleInstanceTerminate")
         ,_objbmExitApp := objBindMethod(this, "_exitApp")
@@ -36,7 +37,7 @@ class MutexSingleInstance
         prevIC  := critical("On")
         name    := name??A_ScriptName
         message := message??this.WM_MUTEXSINGLEINSTANCETERMINATE
-        title   := "\MutexSingleInstance\Force\" name
+        title   := "\MutexSingleInstance\Force\" this._NS "\" name
         this._hMutex := dllCall("Kernel32.dll\CreateMutex", "Ptr",0, "Int",false, "Str",name, "Ptr")
         if (A_LastError == ERROR_ALREADY_EXISTS)    {
             prevDHH := detectHiddenWindows(true)
@@ -48,7 +49,7 @@ class MutexSingleInstance
                     mainHwnd := controlGetText("Edit1", "ahk_id " id)
                 }  catch  {
                 }  else  {
-                    if (A_ScriptHwnd !== mainHwnd)
+                    if (A_ScriptHwnd&0xffffffff !== mainHwnd&0xffffffff)
                         dllCall("User32.dll\PostMessage", "Ptr",mainHwnd, "UInt",message, "UPtr",0, "Ptr",0)
                 }
             }
@@ -72,7 +73,7 @@ class MutexSingleInstance
         prevIC  := critical("On")
         name    := name??A_ScriptName
         message := message??this.WM_MUTEXSINGLEINSTANCETERMINATE
-        title   := "\MutexSingleInstance\Force\" name
+        title   := "\MutexSingleInstance\Force\" this._NS "\" name
         if (this._hMutex)
             dllCall("Kernel32.dll\CloseHandle", "Ptr",this._hMutex), this._hMutex := 0
         if (this._gui)
@@ -96,7 +97,7 @@ class MutexSingleInstance
         static ERROR_ALREADY_EXISTS := 183
         hWnd    := 0
         name    := name??A_ScriptName
-        title   := "\MutexSingleInstance\Force\" name
+        title   := "\MutexSingleInstance\Force\" this._NS "\" name
         hMutex  := dllCall("Kernel32.dll\CreateMutex", "Ptr",0, "Int",false, "Str",name, "Ptr")
         if (A_LastError == ERROR_ALREADY_EXISTS)    {
             prevDHH := detectHiddenWindows(true)
@@ -108,7 +109,7 @@ class MutexSingleInstance
                     mainHwnd := controlGetText("Edit1", "ahk_id " id)
                 }  catch  {
                 }  else  {
-                    if (A_ScriptHwnd !== mainHwnd)    {
+                    if (A_ScriptHwnd&0xffffffff !== mainHwnd&0xffffffff)    {
                         hWnd := mainHwnd
                         break
                     }                        
@@ -128,7 +129,7 @@ class MutexSingleInstance
         prevIC  := critical("On")
         name    := name??A_ScriptName
         message := message??this.WM_MUTEXSINGLEINSTANCETERMINATE
-        title   := "\MutexSingleInstance\Force\" name
+        title   := "\MutexSingleInstance\Force\" this._NS "\" name
         hMutex := dllCall("Kernel32.dll\CreateMutex", "Ptr",0, "Int",false, "Str",name, "Ptr")
         ret := 0
         if (A_LastError == ERROR_ALREADY_EXISTS)    {
@@ -141,7 +142,7 @@ class MutexSingleInstance
                     mainHwnd := controlGetText("Edit1", "ahk_id " id)
                 }  catch  {
                 }  else  {
-                    if (!includeSelf && A_ScriptHwnd == mainHwnd)
+                    if (!includeSelf && A_ScriptHwnd&0xffffffff == mainHwnd&0xffffffff)
                         continue
                     dllCall("User32.dll\PostMessage", "Ptr",mainHwnd, "UInt",message, "UPtr",0, "Ptr",0)
                     ++ret
@@ -160,7 +161,7 @@ class MutexSingleInstance
     static terminateProcesses(name?, winCloseTimeout := 4000, processCloseTimeout := 4000)    {
         static ERROR_ALREADY_EXISTS := 183
         name    := name??A_ScriptName
-        title   := "\MutexSingleInstance\Force\" name
+        title   := "\MutexSingleInstance\Force\" this._NS "\" name
         hMutex  := dllCall("Kernel32.dll\CreateMutex", "Ptr",0, "Int",false, "Str",name, "Ptr")
         if (A_LastError == ERROR_ALREADY_EXISTS)    {
             prevDHH := detectHiddenWindows(true)
@@ -201,5 +202,5 @@ class MutexSingleInstance
         return 0
     }
     static _exitApp() => exitApp()
-    static WM_MUTEXSINGLEINSTANCETERMINATE => dllCall("User32.dll\RegisterWindowMessage", "Str","{43F9E166-7AA3-40E6-A456-70566728D01D}:MutexSingleInstance:Terminate", "UInt")
+    static WM_MUTEXSINGLEINSTANCETERMINATE => dllCall("User32.dll\RegisterWindowMessage", "Str",this._NS ":MutexSingleInstance:Terminate", "UInt")
 }
