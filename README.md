@@ -3,7 +3,7 @@ Named mutex-based single-instance helper for AutoHotkey.
 
 This repo provides the same library for **AutoHotkey v2.0** and **v1.1** (each on its own branch: `main-ahkv2.0`, `main-ahkv1.1`). The file name is identical on both branches.
 
-## Why this exists (vs `#SingleInstance Force`)
+## Why this exists (vs [#SingleInstance](https://www.autohotkey.com/docs/v2/lib/_SingleInstance.htm))
 AutoHotkey already has `#SingleInstance Force`, but it can fail to behave as expected when **one instance is elevated (admin) and the other is not**. In that scenario, cross-instance messaging can be blocked by Windows’ message filtering (UIPI), so the “force/close other instance” mechanism becomes unreliable.
 
 This library avoids that by:
