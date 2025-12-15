@@ -8,8 +8,8 @@ AutoHotkey already has `#SingleInstance Force`, but it can fail to behave as exp
 
 This library avoids that by:
 - using a **named mutex** for instance detection, and
-- using a **registered window message** for termination requests, with an optional
-  `ChangeWindowMessageFilterEx` call (when running as admin) to allow the message through.
+- using a **registered window message** for termination requests.
+  When running as **admin**, it also calls `ChangeWindowMessageFilterEx` to allow the terminate message through Windows message filtering (UIPI).
 
 ## How it works (overview)
 1. Create/open a named mutex (`CreateMutex`).
