@@ -1,4 +1,4 @@
-# mutex-single-instance
+# MutexSingleInstance
 Named mutex-based single-instance helper for AutoHotkey.
 
 This repo provides the same library for **AutoHotkey v2.0** and **v1.1** (each on its own branch: `main-ahkv2.0`, `main-ahkv1.1`). The file name is identical on both branches.
