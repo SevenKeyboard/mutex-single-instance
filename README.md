@@ -9,7 +9,7 @@ The file name and public API are identical on both branches.
 
 ## Rationale
 AutoHotkey already provides `#SingleInstance Force`, but it can fail when **one instance is elevated (admin) and another is not**.  
-In that situation, Windows message filtering (UIPI) may block cross-instance messages, making the built-in “force/close other instance” mechanism unreliable.
+In that situation, Windows message filtering (UIPI) may block cross-instance messages, making the built-in "force/close other instance" mechanism unreliable.
 
 This library addresses that problem by:
 - using a **named mutex** as the authoritative instance detector, and
@@ -17,7 +17,7 @@ This library addresses that problem by:
 
 When running with elevated privileges, it additionally calls `ChangeWindowMessageFilterEx` so the terminate message is allowed through UIPI.
 
-Because the **mutex name defines the instance identity**, this approach also allows you to explicitly control what “the same instance” means.
+Because the **mutex name defines the instance identity**, this approach also allows you to explicitly control what "the same instance" means.
 
 ## Design overview
 1. Create or open a named mutex via `CreateMutex`.
