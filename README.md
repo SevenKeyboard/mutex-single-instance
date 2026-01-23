@@ -88,4 +88,4 @@ Persistent
 ## Forum Thread
 AutoHotkey forum discussion and support:
 
-https://www.autohotkey.com/boards/viewtopic.php?t=XXXXXX
+https://www.autohotkey.com/boards/viewtopic.php?t=140018
