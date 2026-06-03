@@ -18,7 +18,7 @@ class VersionManager_MutexSingleInstance
     static _ := VersionManager_MutexSingleInstance._init()
     _init()    {
         global
-        MUTEXSINGLEINSTANCE_VERSION := "2.0.0"
+        MUTEXSINGLEINSTANCE_VERSION := "2.0.1"
     }
 }
 class MutexSingleInstance
@@ -161,7 +161,7 @@ class MutexSingleInstance
         return ret
     }
     ;--------------------------------------------------------------------------
-    terminateProcesses(name := "", winCloseTimeout := 4000, processCloseTimeout := 4000)    {
+    terminateProcesses(name := "", winCloseTimeout := 4, processCloseTimeout := 4)    {
         static ERROR_ALREADY_EXISTS := 183
         name    := name !== "" ? subStr(name, 1, 259) : this._DefaultMutexName
         title   := "\MutexSingleInstance\Force\" this._NS "\" name
