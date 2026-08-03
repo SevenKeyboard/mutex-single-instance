@@ -18,7 +18,7 @@ class VersionManager_MutexSingleInstance
     static _ := VersionManager_MutexSingleInstance._init()
     _init()    {
         global
-        MUTEXSINGLEINSTANCE_VERSION := "2.0.1"
+        MUTEXSINGLEINSTANCE_VERSION := "2.1.0"
     }
 }
 class MutexSingleInstance
@@ -28,15 +28,19 @@ class MutexSingleInstance
         ,_objbmOnMutexSingleInstanceTerminate := objBindMethod(MutexSingleInstance, "_onMutexSingleInstanceTerminate")
         ,_objbmExitApp := objBindMethod(MutexSingleInstance, "_exitApp")
 
-    register(name := "", message := -1)    {
+    register(name := "", message := -1, previousExitTimeout := 0)    {
         static ERROR_ALREADY_EXISTS := 183
             ,MSGFLT_ALLOW           := 1
             ,MSGFLT_DISALLOW        := 2
             ,MSGFLT_RESET           := 0
+            ,SYNCHRONIZE            := 0x00100000
         critical % format("{2}", prevIC := A_IsCritical, "On")
         name    := name !== "" ? subStr(name, 1, 259) : this._DefaultMutexName
         message := message !== -1 ? message : this.WM_MUTEXSINGLEINSTANCETERMINATE
         title   := "\MutexSingleInstance\Force\" this._NS "\" name
+        previousProcessHandles := []
+        previousProcessIds := {}
+        previousProcessesWaitable := true
         if (this._hMutex)
             dllCall("Kernel32.dll\CloseHandle", "Ptr",this._hMutex), this._hMutex := 0
         this._hMutex := dllCall("Kernel32.dll\CreateMutex", "Ptr",0, "Int",false, "Str",name, "Ptr")
@@ -50,8 +54,21 @@ class MutexSingleInstance
                 mainHwnd += 0
                 if (!mainHwnd)
                     continue
-                if (!errorLevel && A_ScriptHwnd&0xffffffff !== mainHwnd&0xffffffff)
+                if (!errorLevel && A_ScriptHwnd&0xffffffff !== mainHwnd&0xffffffff)    {
+                    if (previousExitTimeout)    {
+                        pid := 0
+                        dllCall("User32.dll\GetWindowThreadProcessId", "Ptr",mainHwnd, "UInt*",pid)
+                        if (pid && !previousProcessIds.hasKey(pid))    {
+                            previousProcessIds[pid] := true
+                            hProcess := dllCall("Kernel32.dll\OpenProcess", "UInt",SYNCHRONIZE, "Int",false, "UInt",pid, "Ptr")
+                            if (hProcess)
+                                previousProcessHandles.push(hProcess)
+                            else
+                                previousProcessesWaitable := false
+                        }
+                    }
                     dllCall("User32.dll\PostMessage", "Ptr",mainHwnd, "UInt",message, "UPtr",0, "Ptr",0)
+                }
             }
             detectHiddenWindows % prevDHH
             setTitleMatchMode   % prevTMM
@@ -64,7 +81,13 @@ class MutexSingleInstance
         if (A_IsAdmin)
             dllCall("User32.dll\ChangeWindowMessageFilterEx", "Ptr",A_ScriptHwnd, "UInt",message, "UInt",MSGFLT_ALLOW, "Ptr",0)
         onMessage(message, this._objbmOnMutexSingleInstanceTerminate, -1)
+        previousInstancesExited := true
+        if (previousExitTimeout)    {
+            processesExited := this._waitForProcessesToExit(previousProcessHandles, previousExitTimeout)
+            previousInstancesExited := previousProcessesWaitable && processesExited
+        }
         critical % prevIC
+        return previousInstancesExited
     }
     unregister(name := "", message := -1)    {
         static MSGFLT_ALLOW         := 1
@@ -207,6 +230,38 @@ class MutexSingleInstance
     }
     _exitApp()    {
         ExitApp
+    }
+    _waitForProcessesToExit(processHandles, timeout)    {
+        static WAIT_OBJECT_0    := 0x00000000
+            ,INFINITE           := 0xFFFFFFFF
+        result    := true
+        startTick := this._TickCount
+        try  {
+            for _,hProcess in processHandles    {
+                if (timeout < 0)    {
+                    timeoutMs := INFINITE
+                }  else  {
+                    elapsedMs := this._TickCount - startTick
+                    timeoutMs := max(0, floor(timeout * 1000 - elapsedMs))
+                }
+                waitResult := dllCall("Kernel32.dll\WaitForSingleObject", "Ptr",hProcess, "UInt",timeoutMs, "UInt")&0xFFFFFFFF
+                if (waitResult !== WAIT_OBJECT_0)    {
+                    result := false
+                    break
+                }
+            }
+        }  finally  {
+            for _,hProcess in processHandles
+                dllCall("Kernel32.dll\CloseHandle", "Ptr",hProcess)
+        }
+        return result
+    }
+    _TickCount    {
+        get  {
+            return (A_Is64BitOS
+                ? dllCall("Kernel32.dll\GetTickCount64", "Int64")&0x7FFFFFFFFFFFFFFF
+                : dllCall("Kernel32.dll\GetTickCount", "UInt"))
+        }
     }
     ;--------------------------------------------------------------------------
     _DefaultMutexName    {
